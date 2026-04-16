@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3%5^8yfehd@hvdboo$kaolx*cj5jnuu7j(p9s8iv(&#v9w47e)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -79,7 +79,8 @@ REST_FRAMEWORK = {
         'DEFAULT_PARSER_CLASSES': [
             'rest_framework.parsers.JSONParser'
             ],
-        'DEFAULT_RENDERER_CLASSES':['rest_framework.renderers.JSONRenderer'],
+        'DEFAULT_RENDERER_CLASSES':['rest_framework.renderers.JSONRenderer','rest_framework.renderers.BrowsableAPIRenderer'],
+
         }
 
 
