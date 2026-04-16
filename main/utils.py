@@ -2,6 +2,9 @@ import requests
 from rest_framework import status
 from rest_framework.response import Response
 from main.models import Profile
+import logging
+
+logger = logging.getLogger(__name__)
 
 GENDERIZE_API_URL = "https://api.genderize.io"
 AGIFY_API_URL = "https://api.agify.io"
@@ -45,7 +48,7 @@ def  get_or_create_profile(name:str)->tuple:
     is_new is only True if a new profile was created.
     '''
 
-    if Profile.objects.exists(name=name):
+    if Profile.objects.filter(name=name).exists():
         return Profile.objects.get(name=name),False,None,False
     else:
         profile, error_message, is_error = process_request(name)
@@ -65,28 +68,37 @@ def process_request(name:str)->tuple:
         gender = data1.get('gender')
         gender_probability = data1.get('probability')
         sample_size = data1.get('count')
+        if gender == None or sample_size == 0:
+            failed_api = 'Genderize'
+            return None, {
+                    'status': 'error',
+                    'message': f'{failed_api} returned an invalid response'
+                    }, True
+
+
         # agify API
         age = data2.get('age')
-        age_group = 'child' if (age>=0 and age<=12) else 'teenager' if (age>=13 and age<=19) else 'adult' if (age>=20 and age<=59) else 'senior' if (age>=60) else 'merlin'
+        if age == None:
+            failed_api = 'Agify'
+            return None, {
+                    'status': 'error',
+                    'message': f'{failed_api} returned an invalid response'
+                    }, True
+
+        else:
+            age_group = 'child' if (age>=0 and age<=12) else 'teenager' if (age>=13 and age<=19) else 'adult' if (age>=20 and age<=59) else 'senior' if (age>=60) else 'merlin'
         # nationalize API
         if data3['country'] == []:
-            failed_apis += ' Nationalize'
+            failed_api = 'Nationalize'
+            return None, {
+                    'status': 'error',
+                    'message': f'{failed_api} returned an invalid response'
+                    }, True
+
         else:
             country = max(data3['country'],key=lambda x:x['probability'])
             country_id = country.get('country_id')
-            country_probability = country.get('country_probability')
-
-        # values validation
-        if gender == None or sample_size == 0:
-            failed_apis += ' Genderize'
-        if age == None:
-            failed_apis += ' Agify'
-        if failed_apis != '':
-            failed_apis = failed_apis.strip().replace(' ', ' | ')
-            return None, {
-                'status': 'error',
-                'message': f'{failed_apis} returned an invalid response'
-            }, True
+            country_probability = country.get('probability')
 
         profile = Profile.objects.create(
             name = name,
@@ -102,7 +114,8 @@ def process_request(name:str)->tuple:
         return profile,None,False
 
         
-    except:
+    except Exception as err:
+        logger.error(f"server failure: {err}")
         return None,{
             'status': 'error',
             'message': 'server failure'
