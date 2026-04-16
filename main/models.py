@@ -3,22 +3,17 @@ from uuid6 import uuid7
 
 
 class Profile(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid7, 
-        editable=False
-    )
+    id = models.UUIDField( primary_key=True, default=uuid7, editable=False, db_index=True)
+    name = models.CharField(max_length=100, unique=True,db_index=True)
 
-    name = models.CharField(max_length=100, unique=True)
-
-    gender = models.CharField(max_length=10)
+    gender = models.CharField(max_length=10,db_index=True)
     gender_probability = models.FloatField()
     sample_size = models.IntegerField()
 
     age = models.IntegerField()
     age_group = models.CharField(max_length=10)
 
-    country_id = models.CharField(max_length=10)
+    country_id = models.CharField(max_length=10,db_index=True)
     country_probability = models.FloatField()
 
     created_at = models.DateTimeField(auto_now_add=True)
